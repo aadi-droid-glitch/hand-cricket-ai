@@ -1,14 +1,18 @@
 """
 main.py
 -------
-Entry point for Hand Cricket AI — Phase 1 (terminal mode).
+Entry point for Hand Cricket AI — Phase 2.
+Now with SQLite storage, pattern brain and AI opponent.
 
 Run with:
     python main.py
 """
 
-from engine.toss import run_toss
-from engine.game import play_match
+from brain.database  import init_db, get_or_create_player
+from brain.tracker   import log_session, get_player_profile
+from brain.predictor import Predictor
+from engine.toss     import run_toss
+from engine.game     import play_match
 
 
 def get_player_name(prompt: str) -> str:
@@ -16,49 +20,81 @@ def get_player_name(prompt: str) -> str:
     return name if name else "Player"
 
 
+def show_insights(predictor: Predictor):
+    """Prints a post-match insights summary for the human player."""
+    s = predictor.summary()
+    if "message" in s:
+        print(f"\n  {s['message']}")
+        return
+
+    print("\n" + "=" * 40)
+    print("         I N S I G H T S")
+    print("=" * 40)
+    print(f"\n  Player         : {s['player']}")
+    print(f"  Total balls    : {s['total_balls']}")
+    print(f"  Favourite no.  : {s['favourite_number']}")
+    print(f"  Least used     : {s['least_used_number']}")
+    print(f"  First ball     : {s['first_ball_tendency']} (most common opener)")
+    print(f"  Predictability : {s['predictability']}")
+
+    print("\n  Number distribution (non-out balls):")
+    freq  = s["number_frequency"]
+    total = sum(freq.values()) or 1
+    for num in range(1, 11):
+        count = freq.get(num, 0)
+        pct   = count / total * 100
+        bar   = "█" * int(pct / 4)
+        print(f"    {num:>2}  {bar:<25} {pct:>5.1f}%  ({count})")
+    print("=" * 40)
+
+
 def main():
     print("\n" + "🏏 " * 14)
     print("       H A N D   C R I C K E T   A I")
     print("🏏 " * 14)
-    print("\n  Phase 1 — Terminal Mode")
-    print("  Pattern brain coming in Phase 2.\n")
+    print("\n  Phase 2 — Pattern Brain Active 🧠\n")
 
-    # Get player names
-    p1 = get_player_name("  Player 1 name: ")
-    p2 = get_player_name("  Player 2 name: ")
+    # Initialise database
+    init_db()
+
+    # Get human player name
+    human = get_player_name("  Your name: ")
+    ai    = "AI"
+
+    # Ensure player exists in DB
+    get_or_create_player(human)
+
+    # Load predictor — reads full history from DB
+    predictor = Predictor(human)
+    print(f"\n  Welcome back, {human}!")
+
+    profile = get_player_profile(human)
+    if profile and profile.get("matches_played", 0) > 0:
+        mp  = profile["matches_played"]
+        mw  = profile["matches_won"]
+        avg = (profile["total_runs"] / profile["total_balls"] * 10
+               if profile["total_balls"] > 0 else 0)
+        print(f"  Matches played : {mp}")
+        print(f"  Wins           : {mw}")
+        print(f"  Scoring rate   : {avg:.1f} runs per 10 balls")
+        pred = predictor.predictability_score()
+        if pred >= 0:
+            print(f"  Predictability : {pred}%  👁️")
+    else:
+        print("  No history yet — the AI is watching from ball one.")
 
     while True:
-        # Toss
-        toss_result = run_toss(p1, p2)
+        print()
+        toss_result = run_toss(human, ai)
+        summary     = play_match(human, ai, toss_result, predictor=predictor)
+        session_id  = log_session(summary)
+        print(f"\n  📊 Match saved. Session #{session_id}")
+        show_insights(predictor)
 
-        # Play match
-        summary = play_match(p1, p2, toss_result)
-
-        # Print ball logs (raw data — pattern brain reads this in Phase 2)
-        print("\n  --- Ball log (innings 1) ---")
-        for ball in summary["innings1_log"]:
-            status = "OUT" if ball["out"] else f"+{ball['runs_scored']}"
-            print(
-                f"  Ball {ball['ball_num']:>2} | "
-                f"Batter: {ball['batter_num']:>2}  Bowler: {ball['bowler_num']:>2} | "
-                f"{status:>4} | Total: {ball['total_after']:>3} | "
-                f"Bracket: {ball['score_bracket']} | Pressure: {ball['pressure']}"
-            )
-
-        print("\n  --- Ball log (innings 2) ---")
-        for ball in summary["innings2_log"]:
-            status = "OUT" if ball["out"] else f"+{ball['runs_scored']}"
-            print(
-                f"  Ball {ball['ball_num']:>2} | "
-                f"Batter: {ball['batter_num']:>2}  Bowler: {ball['bowler_num']:>2} | "
-                f"{status:>4} | Total: {ball['total_after']:>3} | "
-                f"Bracket: {ball['score_bracket']} | Pressure: {ball['pressure']}"
-            )
-
-        # Play again?
         again = input("\n  Play again? (yes / no): ").strip().lower()
         if again not in ("yes", "y"):
-            print("\n  Thanks for playing. Pattern brain is watching. 👁️\n")
+            print(f"\n  See you next time, {human}.")
+            print("  The pattern brain never forgets. 👁️\n")
             break
 
 
