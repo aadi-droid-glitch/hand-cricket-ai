@@ -2,7 +2,7 @@
 main.py
 -------
 Entry point for Hand Cricket AI — Phase 2.
-Now with SQLite storage, pattern brain and AI opponent.
+Human vs AI — pattern brain active.
 
 Run with:
     python main.py
@@ -21,7 +21,6 @@ def get_player_name(prompt: str) -> str:
 
 
 def show_insights(predictor: Predictor):
-    """Prints a post-match insights summary for the human player."""
     s = predictor.summary()
     if "message" in s:
         print(f"\n  {s['message']}")
@@ -54,20 +53,15 @@ def main():
     print("🏏 " * 14)
     print("\n  Phase 2 — Pattern Brain Active 🧠\n")
 
-    # Initialise database
     init_db()
 
-    # Get human player name
     human = get_player_name("  Your name: ")
     ai    = "AI"
 
-    # Ensure player exists in DB
     get_or_create_player(human)
-
-    # Load predictor — reads full history from DB
     predictor = Predictor(human)
-    print(f"\n  Welcome back, {human}!")
 
+    print(f"\n  Welcome, {human}!")
     profile = get_player_profile(human)
     if profile and profile.get("matches_played", 0) > 0:
         mp  = profile["matches_played"]
@@ -85,8 +79,11 @@ def main():
 
     while True:
         print()
-        toss_result = run_toss(human, ai)
-        summary     = play_match(human, ai, toss_result, predictor=predictor)
+        # Pass human name so toss and game know who needs input
+        toss_result = run_toss(human, ai, human=human)
+        summary     = play_match(human, ai, human=human,
+                                 toss_result=toss_result,
+                                 predictor=predictor)
         session_id  = log_session(summary)
         print(f"\n  📊 Match saved. Session #{session_id}")
         show_insights(predictor)

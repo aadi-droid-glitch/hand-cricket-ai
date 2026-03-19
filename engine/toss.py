@@ -4,15 +4,16 @@ toss.py
 Handles the toss at the start of every Hand Cricket game.
 
 How it works:
-  - Player 1 calls "odd" or "even"
-  - Both players simultaneously reveal a number (1–10)
-  - Sum of both numbers determines odd or even
-  - Whoever wins the toss chooses to bat or bowl
+  - Human player calls odd or even
+  - Both reveal a number simultaneously
+  - Sum decides odd or even → winner picks bat or bowl
 """
+
+import random
 
 
 def get_toss_call(player_name: str) -> str:
-    """Ask a player to call odd or even."""
+    """Ask the human to call odd or even."""
     while True:
         call = input(f"\n{player_name}, call it — odd or even? ").strip().lower()
         if call in ("odd", "even"):
@@ -20,11 +21,15 @@ def get_toss_call(player_name: str) -> str:
         print("  Please type 'odd' or 'even'.")
 
 
-def get_toss_number(player_name: str) -> int:
-    """Ask a player to reveal their toss number (1–10)."""
+def get_toss_number(player_name: str, is_ai: bool = False) -> int:
+    """Get a toss number — human types, AI picks randomly."""
+    if is_ai:
+        n = random.randint(1, 10)
+        print(f"  AI entered: {n}")
+        return n
     while True:
         try:
-            number = int(input(f"{player_name}, enter your number (1–10): ").strip())
+            number = int(input(f"  {player_name}, enter your number (1–10): ").strip())
             if 1 <= number <= 10:
                 return number
             print("  Number must be between 1 and 10.")
@@ -33,17 +38,18 @@ def get_toss_number(player_name: str) -> int:
 
 
 def resolve_toss(call: str, n1: int, n2: int) -> bool:
-    """
-    Returns True if the caller wins the toss.
-    Caller wins if the sum matches their odd/even call.
-    """
-    total = n1 + n2
+    """Returns True if the caller wins."""
+    total  = n1 + n2
     result = "odd" if total % 2 != 0 else "even"
     return result == call
 
 
-def get_batting_choice(player_name: str) -> str:
-    """Ask the toss winner whether they want to bat or bowl."""
+def get_batting_choice(player_name: str, is_ai: bool = False) -> str:
+    """Toss winner chooses bat or bowl."""
+    if is_ai:
+        choice = random.choice(["bat", "bowl"])
+        print(f"  AI chose to {choice}.")
+        return choice
     while True:
         choice = input(f"\n{player_name} won the toss! Bat or bowl? ").strip().lower()
         if choice in ("bat", "bowl"):
@@ -51,29 +57,28 @@ def get_batting_choice(player_name: str) -> str:
         print("  Please type 'bat' or 'bowl'.")
 
 
-def run_toss(player1: str, player2: str) -> dict:
+def run_toss(player1: str, player2: str, human: str) -> dict:
     """
     Runs the full toss sequence.
+    human : the human player's name (so AI inputs are automated)
 
-    Returns a dict:
-        {
-            "batter": <name of player who bats first>,
-            "bowler": <name of player who bowls first>
-        }
+    Returns {"batter": <name>, "bowler": <name>}
     """
     print("\n" + "=" * 40)
     print("           T O S S")
     print("=" * 40)
 
-    # Player 1 makes the call
-    call = get_toss_call(player1)
+    # Human always makes the call
+    call = get_toss_call(human)
 
-    # Both reveal numbers
-    print("\nBoth players reveal your toss numbers:")
-    n1 = get_toss_number(player1)
-    n2 = get_toss_number(player2)
+    print("\n  Both players reveal your toss numbers:")
+    p1_is_ai = (player1 != human)
+    p2_is_ai = (player2 != human)
 
-    total = n1 + n2
+    n1 = get_toss_number(player1, is_ai=p1_is_ai)
+    n2 = get_toss_number(player2, is_ai=p2_is_ai)
+
+    total  = n1 + n2
     result = "odd" if total % 2 != 0 else "even"
     print(f"\n  {player1} chose {n1}, {player2} chose {n2} → sum is {total} ({result})")
 
@@ -81,18 +86,14 @@ def run_toss(player1: str, player2: str) -> dict:
     toss_winner = player1 if caller_wins else player2
     toss_loser  = player2 if caller_wins else player1
 
-    print(f"  {player1} called {call.upper()} → {'correct' if caller_wins else 'wrong'}!")
+    print(f"  {human} called {call.upper()} → {'correct!' if caller_wins == (player1 == human) else 'wrong!'}")
     print(f"\n🏆 {toss_winner} wins the toss!")
 
-    # Toss winner picks bat or bowl
-    choice = get_batting_choice(toss_winner)
+    winner_is_ai = (toss_winner != human)
+    choice = get_batting_choice(toss_winner, is_ai=winner_is_ai)
 
-    if choice == "bat":
-        batter = toss_winner
-        bowler = toss_loser
-    else:
-        batter = toss_loser
-        bowler = toss_winner
+    batter = toss_winner  if choice == "bat"  else toss_loser
+    bowler = toss_loser   if choice == "bat"  else toss_winner
 
     print(f"\n  {batter} will bat first.")
     print(f"  {bowler} will bowl first.")
