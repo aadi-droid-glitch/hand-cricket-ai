@@ -154,4 +154,11 @@ This project changes that. It's part game, part experiment, part mirror — buil
 
 ---
 
+## Known Limitations
+Gesture recognition via MediaPipe is orientation-sensitive.
+A trained custom model for these specific hand signs is 
+planned for a future version.
+
+---
+
 *Built with curiosity. Powered by probability. Inspired by boring physics lectures.*
