@@ -10,7 +10,7 @@ This project builds an AI that **plays the game, watches you play, and learns ho
 
 ## What This Is
 
-On the surface: a web app where you play Hand Cricket against an AI using your webcam.
+On the surface: a web app where you play Hand Cricket against an AI using your browser.
 
 Under the surface: a **behavioural pattern recognition engine** that tracks every number you throw, the context you threw it in, and uses that data to bowl against you more intelligently over time.
 
@@ -36,16 +36,16 @@ Humans don't truly randomise. They have favourite numbers, pressure responses, s
 
 | Number | Sign |
 |--------|------|
-| 1 | Index finger up |
-| 2 | Index + middle |
-| 3 | Index + middle + ring |
-| 4 | Index + middle + ring + pinky |
-| 5 | Open palm (non-overlapping clap) |
+| 1 | Index finger only (no thumb) |
+| 2 | Index + middle (no thumb) |
+| 3 | Index + middle + ring (no thumb) |
+| 4 | All four fingers (no thumb) |
+| 5 | Perpendicular clap — both hands |
 | 6 | Thumbs up 👍 |
 | 7 | Thumb + index |
 | 8 | Thumb + index + middle |
 | 9 | Thumb + index + middle + ring |
-| 10 | Namaste / prayer hands 🙏 |
+| 10 | Namaste / parallel clap 🙏 |
 
 ---
 
@@ -91,6 +91,16 @@ flowchart TD
 
 ---
 
+## Game Modes
+
+### Player vs AI
+Play against the pattern brain. The AI learns your tendencies over time and bowls smarter every session.
+
+### Player vs Player
+Two players on the same device. Turn-based input — Player 1 enters number secretly, then Player 2, then both revealed simultaneously. Full match with toss, innings, chase and super over.
+
+---
+
 ## What The AI Tracks
 
 Every single ball is logged with full context:
@@ -112,9 +122,9 @@ From this, the pattern brain builds a **probability table per player** that upda
 
 **Pressure Heatmap** — A grid of score brackets vs numbers showing exactly where your behaviour shifts under pressure.
 
-**Number Distribution** — Bar chart of how often you throw each number. Your giveaway numbers highlighted in red.
+**Number Distribution** — Bar chart of how often you throw each number. Your giveaway numbers highlighted.
 
-**First Ball Tendency** — Your most common opening number across all sessions. Quietly the most damning stat.
+**First Ball Tendency** — Your most common opening number across all sessions.
 
 ---
 
@@ -126,21 +136,47 @@ From this, the pattern brain builds a **probability table per player** that upda
 | Backend + game logic | Python + FastAPI |
 | Pattern brain | NumPy + Markov chain logic |
 | Database | SQLite (local, zero setup) |
-| Web frontend | React + TailwindCSS |
-| Mobile (V2) | Flutter |
+| Web frontend | HTML + CSS + Vanilla JS |
 | Hosting (later) | Railway / Render free tier |
+
+---
+
+## Getting Started
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the web app
+uvicorn web.app:app --reload
+
+# Open browser
+http://localhost:8000
+
+# Or play in terminal
+python main.py
+```
 
 ---
 
 ## Build Roadmap
 
-- [ ] **Phase 1** — Game engine (pure Python, terminal playable)
-- [ ] **Phase 2** — Pattern brain + SQLite data layer
-- [ ] **Phase 3** — Web UI + MediaPipe webcam integration
-- [ ] **Phase 4** — Connect all modules, test, polish
+- [x] **Phase 1** — Game engine (pure Python, terminal playable)
+- [x] **Phase 2** — Pattern brain + SQLite data layer
+- [x] **Phase 3A** — Web UI with FastAPI backend
+- [ ] **Phase 3B** — MediaPipe gesture recognition (in progress)
+- [x] **Phase 4** — PvP mode, polish, documentation
 - [ ] **Phase 5 (V2)** — Mobile app via Flutter
 - [ ] **Phase 6 (V2)** — Custom hand signs per player
 - [ ] **Phase 7 (V2)** — AI batting strategy
+
+---
+
+## Known Limitations
+
+**Gesture recognition** is orientation-sensitive. MediaPipe's rule-based landmark detection works well in consistent lighting and angles but struggles when hand orientation changes. A trained custom model for these specific 10 hand signs is planned for a future version.
+
+**Single device PvP** requires trust — players must not peek at each other's input. A networked multiplayer version is a future goal.
 
 ---
 

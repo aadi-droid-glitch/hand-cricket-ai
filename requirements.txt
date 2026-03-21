@@ -1,0 +1,8 @@
+# Hand Cricket AI — dependencies
+# Install with: pip install -r requirements.txt
+
+fastapi
+uvicorn
+mediapipe
+opencv-python
+numpy
